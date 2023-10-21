@@ -1,0 +1,10 @@
+blizzard-api:
+  client-id: some_client_id
+  client-secret: some_client_secret
+  request-timeout: 3000
+database:
+  host: 127.0.0.1
+  port: 5432
+  username: postgres
+  password: admin
+  database: wow
