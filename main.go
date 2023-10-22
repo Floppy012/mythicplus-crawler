@@ -2,41 +2,59 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"mythic-plus-crawler/internal/blizzapi"
 	"mythic-plus-crawler/internal/config"
+	"mythic-plus-crawler/internal/crawler"
 	"mythic-plus-crawler/internal/database"
 )
 
 func main() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	cfg, err := config.LoadConfig()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Send()
 	}
 
 	db, err := database.Connect(cfg)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Send()
 	}
 
-	api, err := blizzapi.Create(cfg)
+	regionApiClients := make(map[string]*blizzapi.BlizzApi)
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	var activeRegions []database.Region
+	db.Gorm.Where(&database.Region{Active: true}).Find(&activeRegions)
 
-	realms, err := api.GetRealms()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, connected := range realms.Results {
-		for _, realm := range connected.Data.Realms {
-			fmt.Printf(realm.Region.Name.EnUS)
-			db.UpsertRegion(realm.Region.ID, realm.Region.Name.EnUS)
+	for _, region := range activeRegions {
+		log.Info().Msgf("creating api for region %v", region.Slug)
+		api, err := blizzapi.Create(cfg, region)
+		if err != nil {
+			log.Fatal().
+				Stack().
+				Err(fmt.Errorf("error while creating blizzard api client for region %v: %w", region.Slug, err)).
+				Send()
 		}
+
+		regionApiClients[region.Slug] = api
+	}
+
+	log.Info().Msg("crawling realms ...")
+	for regionSlug, api := range regionApiClients {
+		err = crawler.CrawlRealms(api, db)
+
+		if err != nil {
+			log.Fatal().
+				Stack().
+				Err(fmt.Errorf("error while crawling realms fro region %v: %w", regionSlug, err)).
+				Send()
+		}
+
+		log.Info().Msgf("made %v requests to %v api", api.GetRequestCount(), regionSlug)
 	}
 }

@@ -1,7 +1,9 @@
 package database
 
 import (
+	"errors"
 	"fmt"
+
 	"mythic-plus-crawler/internal/config"
 
 	"gorm.io/driver/postgres"
@@ -29,26 +31,40 @@ func Connect(config *config.Config) (*Database, error) {
 		return nil, fmt.Errorf("error while connecting to database: %w", err)
 	}
 
-	_ = db.AutoMigrate(&Region{})
-	_ = db.AutoMigrate(&Timezone{})
-	_ = db.AutoMigrate(&Realm{})
-	_ = db.AutoMigrate(&ConnectedRealm{})
+	err = Migrate(db)
+
+	if err != nil {
+		return nil, fmt.Errorf("error while performing migrations: %w", err)
+	}
 
 	return &Database{
 		Gorm: db,
 	}, nil
 }
 
-func (db *Database) UpsertRegion(regionId int, regionName string) *Region {
-	region := Region{
-		BlizzID: uint(regionId),
-		Name:    regionName,
+func (db *Database) Exists(query interface{}, args ...interface{}) bool {
+	var exists bool
+	err := db.Gorm.Model(query).
+		Select("count(id) > 0").
+		Where(query, args).
+		Limit(1).
+		Find(&exists).
+		Error
+	if err == nil {
+		return exists
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false
 	}
 
-	db.Gorm.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "blizz_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"name"}),
-	}).Create(&region)
+	panic(err)
+}
 
-	return &region
+func (db *Database) Upsert(query interface{}, update interface{}) {
+	if db.Exists(query) {
+		db.Gorm.Clauses(clause.Returning{}).Where(query).Updates(update)
+		return
+	}
+
+	db.Gorm.Save(update)
 }

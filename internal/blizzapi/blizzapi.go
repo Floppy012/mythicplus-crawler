@@ -2,27 +2,82 @@ package blizzapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"mythic-plus-crawler/internal/config"
 	"net/http"
+	"sync"
 	"time"
+
+	"mythic-plus-crawler/internal/config"
+	"mythic-plus-crawler/internal/database"
+	"mythic-plus-crawler/internal/utils"
 
 	"github.com/FuzzyStatic/blizzard/v3"
 	"github.com/FuzzyStatic/blizzard/v3/wowgd"
+	"github.com/FuzzyStatic/blizzard/v3/wowsearch"
 )
 
-type BlizzApi struct {
-	client *blizzard.Client
-	config *config.Config
+type CountingTransport struct {
+	roundTripper http.RoundTripper
+	count        uint32
+	mu           sync.Mutex
 }
 
-func Create(config *config.Config) (*BlizzApi, error) {
+func (t *CountingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.count++
+	return t.roundTripper.RoundTrip(req)
+}
+
+func (t *CountingTransport) GetCount() uint32 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return t.count
+}
+
+type BlizzApi struct {
+	client    *blizzard.Client
+	config    *config.Config
+	transport *CountingTransport
+	Region    database.Region
+}
+
+func Create(config *config.Config, region database.Region) (*BlizzApi, error) {
+	blizzRegion, err := utils.BlizzardRegionFromString(region.Slug)
+	if err != nil {
+		return nil, err
+	}
+	var locale blizzard.Locale
+	switch blizzRegion {
+	case blizzard.US:
+		locale = blizzard.EnUS
+	case blizzard.EU:
+		locale = blizzard.EnGB
+	case blizzard.KR:
+		locale = blizzard.KoKR
+	case blizzard.TW:
+		locale = blizzard.ZhTW
+	case blizzard.CN:
+		locale = blizzard.ZhCN
+	default:
+		return nil, errors.New("unknown region")
+	}
+
+	transport := &CountingTransport{
+		roundTripper: http.DefaultTransport,
+	}
+
 	client, err := blizzard.NewClient(blizzard.Config{
 		ClientID:     config.BlizzardAPI.ClientID,
 		ClientSecret: config.BlizzardAPI.ClientSecret,
-		HTTPClient:   http.DefaultClient,
-		Region:       blizzard.EU,
-		Locale:       blizzard.EnGB,
+		HTTPClient: &http.Client{
+			Transport: transport,
+		},
+		Region: blizzRegion,
+		Locale: locale,
 	})
 
 	if err != nil {
@@ -40,6 +95,8 @@ func Create(config *config.Config) (*BlizzApi, error) {
 	return &BlizzApi{
 		client,
 		config,
+		transport,
+		region,
 	}, nil
 }
 
@@ -50,14 +107,29 @@ func (api *BlizzApi) makeContext() (context.Context, context.CancelFunc) {
 	)
 }
 
-func (api *BlizzApi) GetRealms() (*wowgd.ConnectedRealmsSearch, error) {
-	ctx, cancel := api.makeContext()
+func (api *BlizzApi) GetRequestCount() uint32 {
+	return api.transport.GetCount()
+}
 
-	realms, _, err := api.client.WoWConnectedRealmSearch(ctx)
-	cancel()
-	if err != nil {
-		return nil, fmt.Errorf("error while fetching affixes: %w", err)
+func (api *BlizzApi) GetRealms() (*[]*wowgd.ConnectedRealmsSearch, error) {
+
+	var out []*wowgd.ConnectedRealmsSearch
+
+	for page := 1; ; page++ {
+		ctx, cancel := api.makeContext()
+		result, _, err := api.client.WoWConnectedRealmSearch(ctx, wowsearch.Page(page))
+		cancel()
+
+		if err != nil {
+			return nil, fmt.Errorf("error while fetching affixes: %w", err)
+		}
+
+		out = append(out, result)
+
+		if page == result.PageCount {
+			break
+		}
 	}
 
-	return realms, nil
+	return &out, nil
 }

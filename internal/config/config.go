@@ -3,18 +3,20 @@ package config
 import (
 	"errors"
 	"fmt"
-	"mythic-plus-crawler/assets"
 	"os"
 	"path/filepath"
+
+	"mythic-plus-crawler/assets"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
 	BlizzardAPI struct {
-		ClientID       string `yaml:"client-id" env:"CLIENT_ID"`
-		ClientSecret   string `yaml:"client-secret" env:"CLIENT_SECRET"`
-		RequestTimeout int    `yaml:"request-timeout" env:"REQUEST_TIMEOUT"`
+		ClientID       string   `yaml:"client-id" env:"CLIENT_ID"`
+		ClientSecret   string   `yaml:"client-secret" env:"CLIENT_SECRET"`
+		RequestTimeout int      `yaml:"request-timeout" env:"REQUEST_TIMEOUT"`
+		Regions        []string `yaml:"regions" env:"REGIONS"`
 	} `yaml:"blizzard-api" env-prefix:"BLIZZARD_"`
 
 	Database struct {

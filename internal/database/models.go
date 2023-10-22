@@ -3,55 +3,78 @@ package database
 import (
 	"time"
 
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
-type Region struct {
-	ID        uint
-	BlizzID   uint   `gorm:"uniqueIndex"`
-	Name      string `gorm:"index"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt
-	Realms    []Realm
+type IHasBlizzID interface {
+	GetBlizzID() uint
 }
 
-type Timezone struct {
-	ID        uint
-	Timezone  string `gorm:"index"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt
-	Realms    []Realm
+type HasBlizzID struct {
+	BlizzID uint `gorm:"uniqueIndex"`
+}
+
+func (i HasBlizzID) GetBlizzID() uint {
+	return i.BlizzID
+}
+
+type IGormModel interface {
+	GetID() uint
+}
+
+type GormModel struct {
+	gorm.Model
+}
+
+func (i GormModel) GetID() uint {
+	return i.ID
+}
+
+type Region struct {
+	ID      uint   `gorm:"primaryKey"`
+	BlizzID uint   `gorm:"index; not null"`
+	Slug    string `gorm:"index; not null"`
+	Name    string
+	Active  bool     `gorm:"not null"`
+	Realms  []*Realm `diff:"ignore"`
+}
+
+type ConnectedRealm struct {
+	GormModel
+	HasBlizzID `gorm:"embedded"`
+	RegionID   uint
+	Region     *Region `diff:"ignore"`
+	Queue      bool
+	Online     bool
+	Population string
+	Realms     []*Realm `diff:"ignore"`
 }
 
 type Realm struct {
-	ID               uint
-	BlizzID          uint `gorm:"uniqueIndex"`
-	RegionID         uint `gorm:"index"`
-	Region           Region
-	TimezoneID       uint `gorm:"index"`
-	Timezone         Timezone
-	ConnectedRealmID uint
-	ConnectedRealm   ConnectedRealm
+	GormModel
+	HasBlizzID       `gorm:"embedded"`
+	RegionID         uint            `gorm:"index"`
+	Region           *Region         `diff:"ignore"`
+	Timezone         string          `gorm:"index"`
+	ConnectedRealmID uint            `gorm:"index"`
+	ConnectedRealm   *ConnectedRealm `diff:"ignore"`
 	Name             string
 	Slug             string `gorm:"index"`
 	Tournament       bool
 	Locale           string
 	Type             string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	DeletedAt        gorm.DeletedAt
 }
 
-type ConnectedRealm struct {
+type Log[T any] struct {
 	ID        uint
-	BlizzID   uint `gorm:"uniqueIndex"`
-	Queue     bool
-	Status    bool
-	Type      string
+	RegionID  uint `gorm:"index"`
+	Region    *Region
+	Type      string `gorm:"index"`
+	Payload   datatypes.JSONType[T]
 	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt
-	Realms    []Realm
+}
+
+func (Log[T]) TableName() string {
+	return "logs"
 }
