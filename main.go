@@ -44,14 +44,42 @@ func main() {
 		regionApiClients[region.Slug] = api
 	}
 
-	log.Info().Msg("crawling realms ...")
+	//log.Info().Msg("crawling realms ...")
+	//for regionSlug, api := range regionApiClients {
+	//	err = crawler.CrawlRealms(api, db)
+	//
+	//	if err != nil {
+	//		log.Fatal().
+	//			Stack().
+	//			Err(fmt.Errorf("error while crawling realms fro region %v: %w", regionSlug, err)).
+	//			Send()
+	//	}
+	//
+	//	log.Info().Msgf("made %v requests to %v api", api.GetRequestCount(), regionSlug)
+	//}
+
+	//log.Info().Msg("crawling mythic plus affixes ...")
+	//for regionSlug, api := range regionApiClients {
+	//	err = crawler.CrawlMythicPlusAffixes(api, db)
+	//
+	//	if err != nil {
+	//		log.Fatal().
+	//			Stack().
+	//			Err(fmt.Errorf("error while crawling mythic plus affixes from region %v: %w", regionSlug, err)).
+	//			Send()
+	//	}
+	//
+	//	log.Info().Msgf("made %v requests to %v api", api.GetRequestCount(), regionSlug)
+	//}
+
+	log.Info().Msg("crawling mythic plus dungeons ...")
 	for regionSlug, api := range regionApiClients {
-		err = crawler.CrawlRealms(api, db)
+		err = crawler.CrawlMythicPlusDungeons(api, db)
 
 		if err != nil {
 			log.Fatal().
 				Stack().
-				Err(fmt.Errorf("error while crawling realms fro region %v: %w", regionSlug, err)).
+				Err(fmt.Errorf("error while crawling mythic plus dungeons from region %v: %w", regionSlug, err)).
 				Send()
 		}
 

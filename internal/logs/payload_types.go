@@ -27,3 +27,16 @@ type RealmUpdatedPayload struct {
 type RealmRemovedPayload struct {
 	ID uint
 }
+
+type GenericAdded struct {
+	ID uint
+}
+
+type GenericUpdated struct {
+	ID        uint
+	Changelog diff.Changelog
+}
+
+type GenericRemoved struct {
+	ID uint
+}

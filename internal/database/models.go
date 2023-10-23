@@ -12,7 +12,12 @@ type IHasBlizzID interface {
 }
 
 type HasBlizzID struct {
-	BlizzID uint `gorm:"uniqueIndex"`
+	BlizzID uint `gorm:"index:,unique,composite:blizz_unique"`
+}
+
+type HasRegion struct {
+	RegionID uint    `gorm:"index:,unique,composite:blizz_unique"`
+	Region   *Region `diff:"ignore"`
 }
 
 func (i HasBlizzID) GetBlizzID() uint {
@@ -43,8 +48,7 @@ type Region struct {
 type ConnectedRealm struct {
 	GormModel
 	HasBlizzID `gorm:"embedded"`
-	RegionID   uint
-	Region     *Region `diff:"ignore"`
+	HasRegion  `gorm:"embedded"`
 	Queue      bool
 	Online     bool
 	Population string
@@ -54,8 +58,7 @@ type ConnectedRealm struct {
 type Realm struct {
 	GormModel
 	HasBlizzID       `gorm:"embedded"`
-	RegionID         uint            `gorm:"index"`
-	Region           *Region         `diff:"ignore"`
+	HasRegion        `gorm:"embedded"`
 	Timezone         string          `gorm:"index"`
 	ConnectedRealmID uint            `gorm:"index"`
 	ConnectedRealm   *ConnectedRealm `diff:"ignore"`
@@ -64,6 +67,29 @@ type Realm struct {
 	Tournament       bool
 	Locale           string
 	Type             string
+}
+
+type MythicPlusAffix struct {
+	GormModel
+	HasBlizzID  `gorm:"embedded"`
+	HasRegion   `gorm:"embedded"`
+	Name        string
+	Description string
+}
+
+type MythicPlusDungeon struct {
+	GormModel
+	HasBlizzID          `gorm:"embedded"`
+	HasRegion           `gorm:"embedded"`
+	Name                string
+	MapID               uint
+	MapName             string
+	ZoneSlug            string
+	DungeonID           uint
+	DungeonName         string
+	QualifierTime       int
+	QualifierDoubleTime int
+	QualifierTripleTime int
 }
 
 type Log[T any] struct {

@@ -78,6 +78,12 @@ func Create(config *config.Config, region database.Region) (*BlizzApi, error) {
 		},
 		Region: blizzRegion,
 		Locale: locale,
+		Retries: blizzard.RetriesConfig{
+			Enabled:  true,
+			Attempts: 5,
+			Delay:    500 * time.Millisecond,
+		},
+		RateLimit: blizzard.BlizzardRateLimit,
 	})
 
 	if err != nil {
@@ -132,4 +138,36 @@ func (api *BlizzApi) GetRealms() (*[]*wowgd.ConnectedRealmsSearch, error) {
 	}
 
 	return &out, nil
+}
+
+func (api *BlizzApi) GetMPlusAffixesIndex() (*wowgd.MythicKeystoneAffixIndex, error) {
+	ctx, cancel := api.makeContext()
+	result, _, err := api.client.WoWMythicKeystoneAffixIndex(ctx)
+	cancel()
+
+	return result, err
+}
+
+func (api *BlizzApi) GetMPlusAffixInfo(affixId int) (*wowgd.MythicKeystoneAffix, error) {
+	ctx, cancel := api.makeContext()
+	result, _, err := api.client.WoWMythicKeystoneAffix(ctx, affixId)
+	cancel()
+
+	return result, err
+}
+
+func (api *BlizzApi) GetMPlusDungeonIndex() (*wowgd.MythicKeystoneDungeonIndex, error) {
+	ctx, cancel := api.makeContext()
+	result, _, err := api.client.WoWMythicKeystoneDungeonIndex(ctx)
+	cancel()
+
+	return result, err
+}
+
+func (api *BlizzApi) GetMPlusDungenInfo(dungeonId int) (*wowgd.MythicKeystoneDungeon, error) {
+	ctx, cancel := api.makeContext()
+	result, _, err := api.client.WoWMythicKeystoneDungeon(ctx, dungeonId)
+	cancel()
+
+	return result, err
 }

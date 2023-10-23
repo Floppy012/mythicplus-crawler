@@ -10,6 +10,8 @@ func initSchema(tx *gorm.DB) error {
 		&Region{},
 		&ConnectedRealm{},
 		&Realm{},
+		&MythicPlusAffix{},
+		&MythicPlusDungeon{},
 		&Log[any]{},
 	)
 
@@ -28,7 +30,7 @@ func initSchema(tx *gorm.DB) error {
 			BlizzID: 2,
 			Slug:    "kr",
 			Name:    "Korea",
-			Active:  true,
+			Active:  false,
 		},
 		{
 			BlizzID: 3,
@@ -40,7 +42,7 @@ func initSchema(tx *gorm.DB) error {
 			BlizzID: 4,
 			Slug:    "tw",
 			Name:    "Taiwan",
-			Active:  true,
+			Active:  false,
 		},
 		{
 			BlizzID: 5,
