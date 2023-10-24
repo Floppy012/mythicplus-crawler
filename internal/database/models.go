@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/datatypes"
@@ -37,12 +38,14 @@ func (i GormModel) GetID() uint {
 }
 
 type Region struct {
-	ID      uint   `gorm:"primaryKey"`
-	BlizzID uint   `gorm:"index; not null"`
-	Slug    string `gorm:"index; not null"`
-	Name    string
-	Active  bool     `gorm:"not null"`
-	Realms  []*Realm `diff:"ignore"`
+	ID                       uint   `gorm:"primaryKey"`
+	BlizzID                  uint   `gorm:"index; not null"`
+	Slug                     string `gorm:"index; not null"`
+	Name                     string
+	Active                   bool     `gorm:"not null"`
+	Realms                   []*Realm `diff:"ignore"`
+	ActiveMythicPlusSeasonID *uint
+	ActiveMythicPlusSeason   *MythicPlusSeason
 }
 
 type ConnectedRealm struct {
@@ -90,6 +93,24 @@ type MythicPlusDungeon struct {
 	QualifierTime       int
 	QualifierDoubleTime int
 	QualifierTripleTime int
+}
+
+type MythicPlusSeason struct {
+	GormModel
+	HasBlizzID        `gorm:"embedded"`
+	HasRegion         `gorm:"embedded"`
+	StartTime         time.Time
+	EndTime           sql.NullTime
+	MythicPlusPeriods []*MythicPlusPeriod
+}
+
+type MythicPlusPeriod struct {
+	GormModel
+	HasBlizzID         HasBlizzID `gorm:"embedded"`
+	MythicPlusSeasonID uint       `gorm:"index:,composite:blizz_unique"`
+	MythicPlusSeason   *MythicPlusSeason
+	StartTime          time.Time
+	EndTime            time.Time
 }
 
 type Log[T any] struct {

@@ -72,17 +72,32 @@ func main() {
 	//	log.Info().Msgf("made %v requests to %v api", api.GetRequestCount(), regionSlug)
 	//}
 
-	log.Info().Msg("crawling mythic plus dungeons ...")
+	//log.Info().Msg("crawling mythic plus dungeons ...")
+	//for regionSlug, api := range regionApiClients {
+	//	err = crawler.CrawlMythicPlusDungeons(api, db)
+	//
+	//	if err != nil {
+	//		log.Fatal().
+	//			Stack().
+	//			Err(fmt.Errorf("error while crawling mythic plus dungeons from region %v: %w", regionSlug, err)).
+	//			Send()
+	//	}
+	//
+	//	log.Info().Msgf("made %v requests to %v api", api.GetRequestCount(), regionSlug)
+	//}
+
+	log.Info().Msg("crawling mythic plus seasons ...")
 	for regionSlug, api := range regionApiClients {
-		err = crawler.CrawlMythicPlusDungeons(api, db)
+		err = crawler.CrawlMythicPlusSeasons(api, db)
 
 		if err != nil {
 			log.Fatal().
 				Stack().
-				Err(fmt.Errorf("error while crawling mythic plus dungeons from region %v: %w", regionSlug, err)).
+				Err(fmt.Errorf("error while crawling mythic plus seasons from region %v: %w", regionSlug, err)).
 				Send()
 		}
 
 		log.Info().Msgf("made %v requests to %v api", api.GetRequestCount(), regionSlug)
 	}
+
 }

@@ -22,7 +22,7 @@ func CrawlMythicPlusDungeons(api *blizzapi.BlizzApi, db *database.Database) erro
 
 	for _, entry := range dungeonsIndexes.Dungeons {
 		blizzID := uint(entry.ID)
-		dungeonInfo, err := api.GetMPlusDungenInfo(entry.ID)
+		dungeonInfo, err := api.GetMPlusDungeonInfo(entry.ID)
 
 		if err != nil {
 			return fmt.Errorf("error while getting information for dungeon %v: %w", blizzID, err)

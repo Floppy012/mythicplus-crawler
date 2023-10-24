@@ -40,3 +40,8 @@ type GenericUpdated struct {
 type GenericRemoved struct {
 	ID uint
 }
+
+type MythicPlusActiveSeasonChanged struct {
+	OldSeasonID *uint
+	NewSeasonID *uint
+}

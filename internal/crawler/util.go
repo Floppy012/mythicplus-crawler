@@ -29,9 +29,11 @@ func HandleDBUpdates[T idAndBlizzId, TAddedLog any, TUpdatedLog any, TRemovedLog
 
 	selects := []string{"id", "blizz_id"}
 	selects = append(selects, additionalSelects...)
+	internalElements := make(map[uint]*T)
 
-	for blizzId := range *elements {
+	for blizzId, element := range *elements {
 		blizzIds = append(blizzIds, blizzId)
+		internalElements[blizzId] = element
 	}
 
 	// Updates
@@ -43,14 +45,14 @@ func HandleDBUpdates[T idAndBlizzId, TAddedLog any, TUpdatedLog any, TRemovedLog
 
 	var updateLogs []database.Log[TUpdatedLog]
 	for _, existing := range existingModels {
-		update := *(*elements)[existing.GetBlizzID()]
-		delete(*elements, existing.GetBlizzID())
+		update := (internalElements)[existing.GetBlizzID()]
+		delete(internalElements, existing.GetBlizzID())
 
 		db.Gorm.Model(model).Clauses(clause.Returning{}).Where("id", existing.GetID()).Updates(update)
 		// TODO why does the "clause.Returning" above not update the missing values?
-		db.Gorm.Model(model).Where("id", existing.GetID()).Find(&update)
+		db.Gorm.Model(model).Where("id", existing.GetID()).Find(update)
 
-		changelog, err := utils.DiffDatabaseModel(existing, update)
+		changelog, err := utils.DiffDatabaseModel(existing, *update)
 
 		if err != nil {
 			return fmt.Errorf("error while creating database model diff: %w", err)
@@ -67,7 +69,7 @@ func HandleDBUpdates[T idAndBlizzId, TAddedLog any, TUpdatedLog any, TRemovedLog
 
 	// Creates
 	var creates []*T
-	for _, newElement := range *elements {
+	for _, newElement := range internalElements {
 		creates = append(creates, newElement)
 	}
 

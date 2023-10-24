@@ -164,9 +164,33 @@ func (api *BlizzApi) GetMPlusDungeonIndex() (*wowgd.MythicKeystoneDungeonIndex, 
 	return result, err
 }
 
-func (api *BlizzApi) GetMPlusDungenInfo(dungeonId int) (*wowgd.MythicKeystoneDungeon, error) {
+func (api *BlizzApi) GetMPlusDungeonInfo(dungeonId int) (*wowgd.MythicKeystoneDungeon, error) {
 	ctx, cancel := api.makeContext()
 	result, _, err := api.client.WoWMythicKeystoneDungeon(ctx, dungeonId)
+	cancel()
+
+	return result, err
+}
+
+func (api *BlizzApi) GetMPlusSeasonIndex() (*wowgd.MythicKeystoneSeasonIndex, error) {
+	ctx, cancel := api.makeContext()
+	result, _, err := api.client.WoWMythicKeystoneSeasonIndex(ctx)
+	cancel()
+
+	return result, err
+}
+
+func (api *BlizzApi) GetMPlusSeasonInfo(seasonId int) (*wowgd.MythicKeystoneSeason, error) {
+	ctx, cancel := api.makeContext()
+	result, _, err := api.client.WoWMythicKeystoneSeason(ctx, seasonId)
+	cancel()
+
+	return result, err
+}
+
+func (api *BlizzApi) GetMPlusPeriodInfo(periodId int) (*wowgd.MythicKeystonePeriod, error) {
+	ctx, cancel := api.makeContext()
+	result, _, err := api.client.WoWMythicKeystonePeriod(ctx, periodId)
 	cancel()
 
 	return result, err

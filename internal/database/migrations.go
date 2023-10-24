@@ -12,6 +12,8 @@ func initSchema(tx *gorm.DB) error {
 		&Realm{},
 		&MythicPlusAffix{},
 		&MythicPlusDungeon{},
+		&MythicPlusSeason{},
+		&MythicPlusPeriod{},
 		&Log[any]{},
 	)
 
